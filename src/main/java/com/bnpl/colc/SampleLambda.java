@@ -1,6 +1,7 @@
 package com.bnpl.colc;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -14,13 +15,12 @@ import com.amazonaws.services.lambda.model.ServiceException;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.s3.event.S3EventNotification;
 
-public class SampleLambda implements RequestHandler<S3EventNotification, String> {
+public class SampleLambda implements RequestHandler<List<Integer>, Integer> {
 	//static final Logger log = LoggerFactory.getLogger(SampleLambda.class);
 
 	@Override
-	public String handleRequest(S3EventNotification input, Context context) {
+	public Integer handleRequest(List<Integer> input, Context context) {
 		
 		LambdaLogger logger = context.getLogger();
 		logger.log("<<<<<SampleLambda.handleRequest() is Triggered>>>>>");
@@ -61,12 +61,16 @@ public class SampleLambda implements RequestHandler<S3EventNotification, String>
             System.out.println(se);
         }
         
-        logger.log("<<<<<SampleLambda.handleRequest()t is Terminated>>>>>");
+        logger.log("<<<<<SampleLambda.handleRequest() is Terminated>>>>>");
 		
 		//log.info("<<<<<Lambda Function is Triggered>>>>>");
 		//log.info("S3 Event notification content: " + input.toJson());
 		
-		return input.toJson();
+        int sum = 0;
+        for(Integer i : input) {
+        	sum =+ i;
+        }
+		return sum;
 	}
 
 }
