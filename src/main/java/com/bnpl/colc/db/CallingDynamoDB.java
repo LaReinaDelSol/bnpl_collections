@@ -1,14 +1,33 @@
 package com.bnpl.colc.db;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.KeyAttribute;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.UpdateItemOutcome;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.AttributeAction;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.CreateTableResponse;
 import software.amazon.awssdk.services.dynamodb.model.DeleteTableRequest;
@@ -27,6 +46,8 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.dynamodb.model.ScanRequest;
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 import software.amazon.awssdk.services.dynamodb.model.TableStatus;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 public class CallingDynamoDB {
 
@@ -34,11 +55,11 @@ public class CallingDynamoDB {
 	final static private String AWS_ACCESS_KEY_ID = "AKIA5PTIVJ2P4DXQQU2E";
 	final static private String AWS_SECRET_ACCESS_KEY = "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";
 
-	//public static void main(String[] args) {
-	public void main() {
+	public static void main(String[] args) {
+	//public void main() {
 
 		// creating a table called Movies in DynamoDB - start
-		String tableName = "Cinemas";
+		String tableName = "OP_LoanAccount";
 
 		DynamoDbClient ddbclient = DynamoDbClient.builder()
 				// The region is meaningless for local DynamoDb but required for client builder
@@ -56,7 +77,87 @@ public class CallingDynamoDB {
 		//queryItem(ddbclient, tableName);
 
 		//listAllTableItems(ddbclient, tableName);
+		
+		//updateItemWithNewAttribute(ddbclient, tableName);
+		
+		updateItem(ddbclient, tableName);
+	}
+	
+	public static void updateItem(DynamoDbClient ddbclient, String tableName){
+		
+		 // Create the credentials
+        BasicAWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
 
+        // Create the DynamoDB client
+        AmazonDynamoDBClient client = new AmazonDynamoDBClient(credentials)
+                .withRegion(Regions.US_EAST_1); // Replace with your desired region
+		
+		 // Create the credentials provider
+        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY));
+
+     // Create the DynamoDB object
+        		// Create the DynamoDB object
+                DynamoDB dynamoDB = new DynamoDB(client); // Replace with your desired region
+
+
+		//AWSCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY));
+
+        AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
+        		.withRegion(Regions.US_EAST_1)
+        		.withCredentials(credentialsProvider).build();
+
+        // Create the DynamoDB object
+       // DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
+        
+        // Get the table reference
+        Table table = dynamoDB.getTable(tableName);
+
+        // adding new attribute to existing item
+		//AttributeUpdate update2= new AttributeUpdate("newAttr").put("222");
+		List<AttributeUpdate> attrlist=new ArrayList<AttributeUpdate>();
+		AttributeUpdate update1= new AttributeUpdate("voucherCode").put("923847521130");
+		attrlist.add(update1);
+		//attrlist.add(update2);
+
+		KeyAttribute partitionKey = new KeyAttribute("RefID", "C065789034201");
+        KeyAttribute sortKey = new KeyAttribute("RefDate", "1686725555");
+        
+		UpdateItemSpec updateItemSpec = new UpdateItemSpec().withPrimaryKey(partitionKey, sortKey).withAttributeUpdate(attrlist)
+				.withReturnValues(ReturnValue.ALL_NEW);
+		UpdateItemOutcome outcome = table.updateItem(updateItemSpec);
+
+		// Check the response.
+		System.out.println("Printing item after updating new attribute...");
+		System.out.println(outcome.getItem().toJSONPretty());
+	}
+	
+	public static void updateItemWithNewAttribute(DynamoDbClient ddbclient, String tableName) {
+		
+		// create the key attributes
+		HashMap<String,AttributeValue> itemKey = new HashMap<>();
+		itemKey.put("RefID", AttributeValue.builder().s("C065789034201").build());
+		itemKey.put("RefDate", AttributeValue.builder().n("1686725555").build());		
+		
+        // create the attribute values
+        HashMap<String,AttributeValueUpdate> updatedValues = new HashMap<>();	
+        updatedValues.put("voucherCode", AttributeValueUpdate.builder()
+            .value(AttributeValue.builder().s("923847521130").build())
+            .action(AttributeAction.PUT)
+            .build());
+               
+		// Create the update request
+        UpdateItemRequest request = UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(itemKey)
+               // .updateExpression("set voucherCode = :923847521130")
+                .attributeUpdates(updatedValues)
+                .build();
+
+        // Perform the update
+        UpdateItemResponse response = ddbclient.updateItem(request);
+
+        // Print the updated item
+        System.out.println("Updated item: " + response.attributes());
 	}
 
 	public void listAllTableItems(DynamoDbClient ddbclient, String tableName) {
