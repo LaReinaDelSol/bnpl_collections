@@ -1,5 +1,7 @@
 package com.bnpl.colc;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -7,6 +9,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 import com.bnpl.colc.dto.Instalment;
+import com.bnpl.colc.dto.Instalment.InstalmentStatus;
 
 public class CollectionsTools {
 	public long daysPassedAfterDueDate(Date dueDate) {
@@ -16,14 +19,18 @@ public class CollectionsTools {
 		
 		long diffDays = ChronoUnit.DAYS.between(dueLocalDate, currentLocalDate);
 
-        System.out.println("Difference in days: " + diffDays);      
 		return diffDays;
 	}
 	
 	// returns difference of payment due date and current date. In case payment due date falls after current date, it returns -1
-	public long isInstalmentEligibleForCollection(Instalment instalment) {
-		long daysPassed = daysPassedAfterDueDate(instalment.getDueDate());
-		if(daysPassed >= 0 && !instalment.isInstallmentStatus()) {
+	public long isInstalmentEligibleForCollection(Instalment instalment) throws ParseException {
+
+		long daysPassed = daysPassedAfterDueDate(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").parse(instalment.getDueDate()));
+		
+		System.out.println("Difference of number of days between due date and current date is : " + daysPassed);
+		if (daysPassed >= 0 && (instalment.getInstallmentStatus().equals(InstalmentStatus.PENDING.name()))
+				|| instalment.getInstallmentStatus().equals(InstalmentStatus.OVERDUE.name())) {
+			
 			return daysPassed;
 		}
 		return -1;
@@ -33,9 +40,9 @@ public class CollectionsTools {
     public long countBusinessDaysFromCurrentDay(LocalDate pastDays) {
     	LocalDate startDate = new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         long totalDays = ChronoUnit.DAYS.between(pastDays, startDate);
-        long weekends = countWeekends(pastDays, startDate);
+        long weekendDays = countWeekends(pastDays, startDate);
         
-        return totalDays - weekends;
+        return totalDays - weekendDays;
     }
 
     private long countWeekends(LocalDate startDate, LocalDate endDate) {

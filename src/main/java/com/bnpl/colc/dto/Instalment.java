@@ -1,79 +1,84 @@
 package com.bnpl.colc.dto;
 
-import java.util.Date;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 
+@DynamoDbBean
 public class Instalment {
-	
-	private int amount;
-	private int feeAmount;
+
+	private double amount;
+	private double feeAmount;
 	private String currencySymbol;
-	private Date dueDate;
+	private String dueDate;
 	private int failedAttempts;
-	private boolean installmentStatus;
-	private Date paidOn;
-	private String transactionRef;		
-	
-	public Instalment(int amount, String currencySymbol, Date dueDate, int failedAttempts,
-			boolean installmentStatus, Date paidOn, String transactionRef) {
-		super();
-		this.amount = amount;
-		this.currencySymbol = currencySymbol;
-		this.dueDate = dueDate;
-		this.failedAttempts = failedAttempts;
-		this.installmentStatus = installmentStatus;
-		this.paidOn = paidOn;
-		this.transactionRef = transactionRef;
+	private String installmentStatus;
+	private String transactionRef;
+
+	public enum InstalmentStatus {
+		PAID, PENDING, OVERDUE
 	}
-	
-	public int getAmount() {
+
+	@DynamoDbAttribute("Amount")
+	public double getAmount() {
 		return amount;
 	}
-	public void setAmount(int amount) {
+
+	public void setAmount(double amount) {
 		this.amount = amount;
 	}
+
+	@DynamoDbAttribute("CurrencySymbol")
 	public String getCurrencySymbol() {
 		return currencySymbol;
 	}
+
 	public void setCurrencySymbol(String currencySymbol) {
 		this.currencySymbol = currencySymbol;
 	}
-	public Date getDueDate() {
-		return dueDate;
-	}
-	public void setDueDate(Date dueDate) {
-		this.dueDate = dueDate;
-	}
+
+	@DynamoDbAttribute("FailedAttempts")
 	public int getFailedAttempts() {
 		return failedAttempts;
 	}
+
 	public void setFailedAttempts(int failedAttempts) {
 		this.failedAttempts = failedAttempts;
 	}
-	public boolean isInstallmentStatus() {
-		return installmentStatus;
-	}
-	public void setInstallmentStatus(boolean installmentStatus) {
-		this.installmentStatus = installmentStatus;
-	}
-	public Date getPaidOn() {
-		return paidOn;
-	}
-	public void setPaidOn(Date paidOn) {
-		this.paidOn = paidOn;
-	}
+
+	@DynamoDbAttribute("TransactionRef")
 	public String getTransactionRef() {
 		return transactionRef;
 	}
+
 	public void setTransactionRef(String transactionRef) {
 		this.transactionRef = transactionRef;
 	}
 
-	public int getFeeAmount() {
+	@DynamoDbAttribute("FeeAmount")
+	public double getFeeAmount() {
 		return feeAmount;
 	}
 
-	public void setFeeAmount(int feeAmount) {
+	public void setFeeAmount(double feeAmount) {
 		this.feeAmount = feeAmount;
+	}
+
+	@DynamoDbAttribute("InstallmentStatus")
+	public String getInstallmentStatus() {
+		return installmentStatus;
+	}
+
+	public void setInstallmentStatus(String status) {
+		this.installmentStatus = InstalmentStatus.valueOf(status).name();
+	}
+
+	@DynamoDbAttribute("DueDate")
+	public String getDueDate() {
+		return dueDate;
+	}
+
+	public void setDueDate(String dueDate) {
+		this.dueDate = dueDate;
 	}
 
 }

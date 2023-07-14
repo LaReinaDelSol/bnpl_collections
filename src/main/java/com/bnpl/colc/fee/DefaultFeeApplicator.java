@@ -1,30 +1,38 @@
 package com.bnpl.colc.fee;
 
-import com.bnpl.colc.dto.BNPLAccountData;
-import com.bnpl.colc.dto.BNPLPaymentData;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import com.bnpl.colc.dto.LoanAccountData;
+import com.bnpl.colc.dto.PaymentData;
 import com.bnpl.colc.dto.Instalment;
 
 public class DefaultFeeApplicator {
-	
-	private static final int DEFAULT_FEE = 75;
 
-	public void calculateDefaultFee(BNPLAccountData bnplAccountData, Instalment instalmentToBeCollected) {
-		
-		BNPLPaymentData paymentData = bnplAccountData.getBnplPaymentData();	
-		if(!paymentData.isDefaultFeeApplied()) {
-		instalmentToBeCollected.setFeeAmount(DEFAULT_FEE);
-		paymentData.setDefaultFeeApplied(true);
-		
+	private static final double DEFAULT_FEE = 75.0;
+
+	public void levyDefaultFee(LoanAccountData bnplAccountData, Instalment instalmentToBeCollected) {
+
+		PaymentData paymentData = bnplAccountData.getPaymentData();
+		if (!paymentData.isDefaultFeeApplied()) {
+			instalmentToBeCollected.setFeeAmount(DEFAULT_FEE);
+			paymentData.setDefaultFeeApplied(true);
+
 		}
 	}
-	
-	public void removeDefaultFee(BNPLAccountData bnplAccountData) {
-		BNPLPaymentData paymentData = bnplAccountData.getBnplPaymentData();	
-		if(paymentData.isDefaultFeeApplied()) {
-			for(Instalment ins : paymentData.getInstalments())
+
+	public boolean removeDefaultFee(LoanAccountData bnplAccountData) {
+		PaymentData paymentData = bnplAccountData.getPaymentData();
+		if (paymentData.isDefaultFeeApplied()) {
+			for (Instalment ins : bnplAccountData.getInstalments()) {
 				ins.setFeeAmount(0);
-			paymentData.setDefaultFeeApplied(false);		
+			}
+			paymentData.setDefaultFeeApplied(false);
+			
+			bnplAccountData.setBadDebt(true);
+			bnplAccountData.setBadDebtDeclarationDate(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date()));
+			return true;
 		}
+		return false;
 	}
 }
-	

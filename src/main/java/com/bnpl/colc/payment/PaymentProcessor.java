@@ -1,71 +1,41 @@
 package com.bnpl.colc.payment;
 
-import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.lambda.AWSLambda;
-import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
-import com.amazonaws.services.lambda.model.InvokeRequest;
-import com.amazonaws.services.lambda.model.InvokeResult;
-import com.amazonaws.services.lambda.model.ServiceException;
-import com.bnpl.colc.dto.BNPLAccountData;
-import com.bnpl.colc.dto.Instalment;
+import com.bnpl.colc.dto.LoanAccountData;
+import com.bnpl.colc.dto.PaymentResponse;
+import com.bnpl.colc.dto.PaymentStatus;
 
 public class PaymentProcessor {
 
-    public void processPayment(String region, String functionName, String payload) {
-        
-    	// Instantiate credentials
-        final String AWS_ACCESS_KEY_ID = "AKIA5PTIVJ2P4DXQQU2E";
-        final String AWS_SECRET_ACCESS_KEY = "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";
+	public PaymentStatus processPayment(LoanAccountData bnplAccountData, String currencySymbol,
+			int instalmentNumberToBeCollected) {
 
-        AWSCredentials credentials = new BasicAWSCredentials(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
-       
-        // Create an InvokeRequest with AWS function name and payload
-        String payLoad = null;
-        InvokeRequest invokeRequest = new InvokeRequest()
-                .withFunctionName("arn:aws:lambda:us-east-1:926858694303:function:mau_lambda")
-                .withPayload(payLoad);
-/*                .withPayload("{\n" +
-                        " \"Hello \": \"Paris\",\n" +
-                        " \"countryCode\": \"FR\"\n" +
-                        "}");*/
-        		
-        // Instantiate InvokeResult to capture function invocation response
-        InvokeResult invokeResult = null;
+		PaymentResponse res = processPayment(bnplAccountData.getRefID(), bnplAccountData.getRefDate(), new int[] { instalmentNumberToBeCollected });
+		PaymentStatus status = null;
+		if (res != null) {
+			status = new PaymentStatus();
+			status.setAmount(res.getAmount());
+			status.setCurrencySymbol(currencySymbol);
+			status.setPaymentTransactionDate(res.getTransactionDate());
+			status.setTransactionDesc("Auto Debit Instalment " + ++instalmentNumberToBeCollected);
+			status.setTransactionStatus(res.isStatus());
+		}
+		return status;
+	}
 
-        try {
-        	// Instantiate AWSLambdaClientBuilder to build the Lambda client with predefined credentials and regions to invoke the Lambda function 
-            AWSLambda awsLambda = AWSLambdaClientBuilder.standard()
-                    .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                    .withRegion(Regions.US_EAST_1).build();
-            
-            // Invoke the function and capture response
-            invokeResult = awsLambda.invoke(invokeRequest);
+	private PaymentResponse processPayment(String refID, String refDate, int[] instalmentNumberToBeCollected) {
 
-            // Stringify payload
-            String ans = new String(invokeResult.getPayload().array(), StandardCharsets.UTF_8);
+		boolean paymentSuccess = true;
 
-            //write out the return value
-            System.out.println(ans);
+		PaymentResponse res = new PaymentResponse();
+		res.setAmount(174.99);
+		res.setStatus(paymentSuccess);
+		res.setTransactionDate(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date()));
+		res.setTransactionRefID("transactionId");
 
-        } catch (ServiceException se) {
-            System.out.println(se);
-        }
+		return res;
 
-        System.out.println(invokeResult.getStatusCode());
-    }
-    
-    public double processPayment(BNPLAccountData bnplAccountData, Instalment instalmentToBeCollected) {
-    	// calculate total amount to be charged
-    	double amountToBeCollected =+ instalmentToBeCollected.getAmount();   	
-    	if(bnplAccountData.getBnplPaymentData().isDefaultFeeApplied()) {
-    		amountToBeCollected =+ instalmentToBeCollected.getFeeAmount();
-    	}
-    	return amountToBeCollected;
-    	//TODO: trigger Revio with amountToBeCollected
-    }
+	}
 }
